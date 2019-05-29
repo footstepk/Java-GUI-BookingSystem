@@ -1,0 +1,169 @@
+/*
+ * This is a database of Automated Booking System.
+ * It has 3 tables, customers, barbers and administrators.
+ *
+ *Student Name: Kim Jang Wong, Student number: 2017300
+*/
+
+/** Check database exists, if then create one. */
+DROP DATABASE IF EXISTS booking;
+
+/** Now create the database of booking. */
+CREATE DATABASE IF NOT EXISTS booking;
+USE booking;
+
+/** Check customers table exits, if then create one .*/
+DROP TABLE IF EXISTS customers;
+
+/** Now create the customers table. */
+CREATE TABLE IF NOT EXISTS customers (
+   customer_id INTEGER NOT NULL AUTO_INCREMENT,
+   first_name VARCHAR(40) NOT NULL,
+   last_name VARCHAR(40) NOT NULL,
+   phone CHAR(20) NULL,
+   customer_email VARCHAR(40) NOT NULL,
+   password VARCHAR(255) NOT NULL,
+   current_booked DATETIME NULL,
+   past_booked DATETIME NULL,
+   comment TEXT NULL,
+confirm_booking VARCHAR(255) NULL,
+   PRIMARY KEY (customer_id),
+   UNIQUE KEY (customer_email, current_booked)
+   ) ENGINE = INNODB;
+                  
+/** Testing : To illustrate that your database has met the requirements mentioned above, write the 
+  * SQL statements that will provide the following information: */
+
+/** Insert some values (FIRST) into customers table for testing purposes. */
+INSERT INTO customers values
+   (100100, 'Linda', 'Chung', '077389321003', 'chung.linda@live.can', SHA1('Iloveme84~'), '2018-11-26 09:30:00', '2016-02-28 13:30:00', 'I got married, cannot turn up to cut me hair!'),
+   (0, 'Katy', 'Kung', '0940352279', 'katykung2@gmail.hk', SHA1('Mybeauty86!'), null, '2018-01-31 10:15:00', 'I got crowned as second best actress, cannot cut me hair!'),
+   (0, 'Marie', 'McLaughlin', '0852981204', 'mclaughlinmary59@cct.ie', SHA1('marrymemary?A'), null, null, null),
+   (0, 'Jade', 'Jankins', '0894735772', 'getmeone@gmail.com', SHA1('84jade00?Z'), '2018-11-26 11:35:00', '2012-04-03', 'The barber charge me over price, I dont like her'),
+   (0, 'Maxe', 'Power', '012889091', 'powermax2@hotmail.com', SHA1('powertheman3P{'), '2018-12-01 14:50:30', '2017-04-23', 'The barber was a shocked, dont know how to cut me hair, money back!');
+
+/**1. A list of all customers (first name and last name) registered for the service. */
+SELECT first_name, last_name
+FROM customers;
+
+/** 2. A list of all bookings that were approved after 01/09/2018. */
+SELECT first_name, last_name, current_booked as 'Booked After 01/09/2018'
+FROM customers
+WHERE current_booked > '01/09/2018';
+
+/** Check barbers table exists, if then create one. */
+DROP TABLE IF EXISTS barbers;
+                    
+/** Now create the barbers table. */
+CREATE TABLE IF NOT EXISTS barbers (
+   barber_id INTEGER NOT NULL AUTO_INCREMENT,
+   first_name VARCHAR(40) NOT NULL,
+   last_name VARCHAR(40) NOT NULL,
+   location VARCHAR(40) NOT NULL,
+   phone CHAR(20) NOT NULL,
+   barber_email VARCHAR(40) NOT NULL,
+   password VARCHAR(255) NOT NULL,
+   registered BOOLEAN NOT NULL,
+   appointment_date DATETIME NULL,
+   free_time DATETIME NULL,
+   confirm_booking VARCHAR(255) NULL,
+      customer_id INTEGER NULL,
+   customer_email VARCHAR(40) NULL,
+   FOREIGN KEY (customer_email) REFERENCES customers(customer_email) ON
+   DELETE CASCADE,
+   PRIMARY KEY (barber_id),
+   UNIQUE KEY (barber_email, free_time)
+   ) ENGINE = INNODB;
+
+/** Insert some values into barbers table for testing purposes (FIRST). */
+INSERT INTO barbers values
+   (200100, 'Widdole', 'Whitehouse', 'White hall lane, Floor 2, Dublin 9', '018079898', 'whitehouse.w1@hotmail.com', SHA1('Az0234?fe'), TRUE, '2018-04-01 09:40:30', '2018-11-26 09:00:00', null, null),
+   (0, 'Amanda', 'Browne', 'Shopping Mall W, Floor 2, Dublin 1', '0831000101', 'amy.browne@live.ie', SHA1('123?AmyD'), TRUE, '2017-07-24 15:30:00', '2018-11-26 09:00:00', 100100, 'chung.linda@live.can'),
+   (0, 'Kevin', 'Stone', 'Unit 1, Durran Street Dublin 2', '0874230112', 'kevin2@gmail.ie', SHA1('Kevin1234!'), TRUE, '2014-03-24 11:30:00', '2018-08-26 09:00:00', 100105, 'powermax2@hotmail.com'),
+   (0, 'Hong', 'Guang', 'Parnell West, lot 2 Dublin 1', '0857880971', 'hong.guang2@live.cn', SHA1('#2DfddxI?'), TRUE, '2008-07-01 14:20:00', '2018-05-02 09:00:00', null, null),
+   (0, 'Joe', 'Jenze', 'Shopping Mall Sixth floor Dublin 4', '0899014475', 'joe-j47@live.com', SHA1('788ABC?#0q'), TRUE, '2016-02-01 16:15:00', '2018-09-01 09:00:00', 100104, null);
+
+/** 3. A list of all the barbers and the appointments they have completed. */
+SELECT b.first_name, b.last_name, b.appointment_date as 'Completed Appointment'
+FROM barbers b
+HAVING DATE(b.appointment_date) < CurDATE();
+
+/** 4. Using an SQL statement, return how many barbers there are registered in the database?. */
+SELECT COUNT(registered) as 'Number of barber(s) are registered in the database'
+FROM barbers
+WHERE registered;
+
+/** 5. For each barber, the number of appointments they have had (and completed). */
+SELECT first_name, last_name, COUNT(appointment_date) as 'Number of appointments they have had (and completed)'
+FROM barbers
+GROUP BY appointment_date
+HAVING DATE(appointment_date) < CURDATE();
+
+/** 6. For each barber, the number of customers they have had this year. [Hint this query will use Group By]. */
+SELECT first_name, last_name, COUNT(customer_id) as 'Number of customers they have had this year'
+FROM barbers
+GROUP BY customer_id, appointment_date
+HAVING DATE(appointment_date) < CURDATE();
+
+/** 7. The name of all customers and the barber they have been booked in with. */ 
+SELECT c.first_name, c.last_name, b.first_name, b.last_name as 'The barber(s) they had booked'
+FROM customers c, barbers b
+WHERE c.customer_id = b.customer_id;
+
+/** Check administrators table exists, if then create one. */
+DROP TABLE IF EXISTS administrators;
+
+/** Now create administrators table. */
+CREATE TABLE administrators (
+   admin_id INTEGER NOT NULL AUTO_INCREMENT,
+   first_name VARCHAR(40) NOT NULL,
+   last_name VARCHAR(40) NOT NULL,
+      customer_id INTEGER NULL,
+   customer_email VARCHAR (40) NULL,
+      barber_id INTEGER NULL,
+   barber_email VARCHAR (40) NULL,
+   request_reset_files TEXT(2000) NULL,
+   admin_email VARCHAR(40) NOT NULL,
+   password VARCHAR(255) NOT NULL,
+   start_date DATE NULL,
+   FOREIGN KEY (customer_email) REFERENCES customers (customer_email) ON
+   DELETE CASCADE,
+   FOREIGN KEY (barber_email) REFERENCES barbers (barber_email) ON
+   DELETE CASCADE,
+   PRIMARY KEY (admin_id)
+   ) ENGINE = INNODB;
+
+/* insert tes case admin@admin into database */
+INSERT INTO administrators VALUES
+   (500100, 'Jessie', 'Wong', null, null, null, null, null, 'admin@admin.ie', 'Admin1?!', null);   
+
+/*** OPTION ADDITIONAL MARKS . */
+/**For additional security of administration, you should follow below requirements. 
+  * Remove the hard-coded administrator user and password.
+  * Create a new table which,
+  * contains a username and password.
+  * This will be the table against which the Admin login should validate against.
+  */
+
+/** Check if table new_administrators exists, if then delete it. */
+DROP TABLE IF EXISTS new_administrators;
+
+/**  Add some functionality to the administrator dashboard to would allow,
+  * them to create another administrator.
+  */
+
+CREATE TABLE IF NOT EXISTS new_administrators (
+   username VARCHAR (40) NOT NULL,
+   first_name VARCHAR (40) NOT NULL,
+   last_name VARCHAR (40) NOT NULL,
+   password VARCHAR (255) NOT NULL,
+   admin_privilege_status BOOLEAN NOT NULL, /* allow to add another administrator*/
+   customer_id INTEGER NULL,
+   barber_id INTEGER NULL,
+   comment TEXT (2000) NULL, /* review all the comments make by customers8*/
+   PRIMARY KEY (username),
+   FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE, /* no duplicate or register more than one.*/
+   FOREIGN KEY(barber_id) REFERENCES barbers(barber_id) ON DELETE CASCADE
+   ) ENGINE = INNODB;
+
+   
